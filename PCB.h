@@ -18,6 +18,7 @@ typedef struct
     int waitingTime;
     int finishTime;
     enum {NOTSTARTED, RUNNING, WAITING, FINISHED} state;
+    int alloc_mem_chunk;
 
 }   PCB;
 
@@ -31,6 +32,7 @@ void PCBinit(PCB *newlyReadPCB) {
     newlyReadPCB->waitingTime = 0;
     newlyReadPCB->finishTime = -1;
     newlyReadPCB->state = NOTSTARTED;
+    newlyReadPCB->alloc_mem_chunk = -1;
 
 }
 
@@ -48,4 +50,5 @@ void equate(PCB *from, PCB *to) {
     to->waitingTime = from->waitingTime;
     to->finishTime = from->finishTime;
     to->state = from->state;
+    to->alloc_mem_chunk = from->alloc_mem_chunk;
 }
