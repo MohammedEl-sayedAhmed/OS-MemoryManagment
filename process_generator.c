@@ -167,7 +167,7 @@ void readInputFile(Queue* arrivedProcessesQueue)
             }
 
             // Read the process data and save it properly to the PCB struct object
-            fscanf(inputFile , "%d %d %d", &myNewPCB->arrivalTime, &myNewPCB->runTime , &myNewPCB->priority);
+            fscanf(inputFile , "%d %d %d %d", &myNewPCB->arrivalTime, &myNewPCB->runTime , &myNewPCB->priority, &myNewPCB->mem_size);
 
             // Initializing the rest of the members
             PCBinit(myNewPCB);

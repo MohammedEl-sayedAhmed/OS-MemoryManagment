@@ -9,6 +9,7 @@ typedef struct
     int arrivalTime;
     int runTime;
     int priority;
+    int mem_size;
 
     // PCB data
     pid_t pid;
@@ -38,6 +39,7 @@ void equate(PCB *from, PCB *to) {
     to->arrivalTime = from->arrivalTime;
     to->runTime = from->runTime;
     to->priority = from->priority;
+    to->mem_size = from->mem_size;
 
     // PCB data
     to->pid = from->pid;
