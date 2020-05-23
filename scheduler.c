@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "linkedList.h"
 #include "PriorityQueue.h"
 #include "Queue.h"
 #include "PCB.h"
@@ -32,8 +33,15 @@ double total_proceesing_time = 0;
 double total_WTA = 0;
 double processCount = 0;
 Queue WTAQueue;
-
 void StandardDeviation(FILE* outCalcFile);
+
+// array of memory chunks linked lists
+LinkedList freeChunks[8];
+// allocates memory for the given process
+void allocate_mem(PCB* processPCB);
+// gets the first available chunk in the memory list with number list_num
+int getFirstFreeChunk(int list_num);
+
 
 int main(int argc, char * argv[])
 {
@@ -75,6 +83,12 @@ int main(int argc, char * argv[])
 
     // Initialize message queue 
     initMsgQueue();
+
+    // Initialize linked lists of free memory chunks
+    for (int i = 0; i < 8; i++) {
+        LLInit(&(freeChunks[i]), sizeof(int));
+    }
+    SortedInsert(&(freeChunks[7]), 1);
 
     // Initialize queue of weighted turnaround times
     queueInit(&WTAQueue, sizeof(double));
@@ -132,6 +146,46 @@ int main(int argc, char * argv[])
     //destroyClk(false);
 
     return 0;
+}
+
+void allocate_mem(PCB* processPCB) {
+    // get the number of the list corresponding to the required memory size
+    int list_num = ceil(log2(processPCB->mem_size)) - 3;
+    int chunk_size = pow(2, (list_num + 3));    
+    int chunk_num = getFirstFreeChunk(list_num);
+
+    // update process PCB to store number of allocated memory chunk
+    processPCB->alloc_mem_chunk = chunk_num;
+}
+
+// Gets the first available chunk in the memory list with number list_num
+int getFirstFreeChunk(int list_num) {
+    
+    if ((list_num < 0) || (list_num > 7)) {
+        printf("Required chunk size is invalid; out of boundaries.\n");
+        return -1;
+    }
+
+    if (freeChunks[list_num].sizeOfLL != 0) {
+        return (delete_begin((&freeChunks[list_num])));
+    }
+    else {
+        if ((list_num + 1) > 7) {
+            printf("No free memory available for allocation.\n");
+            return -1;
+        }
+
+        int chunk_num = getFirstFreeChunk(list_num + 1);
+
+        if (chunk_num != -1) 
+        {
+            SortedInsert((&freeChunks[list_num]), chunk_num*2);
+            return ((chunk_num*2) - 1);
+        }
+        else {
+            return -1;
+        }
+    }
 }
 
 // Resumes a currently running process
@@ -305,6 +359,8 @@ void SRTN(FILE* outLogFile) {
                     // If process is not flag
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB); 
+                    // Allocate memory to the new process
+                    allocate_mem(tempPCB);
                     // Push process to the queue
                     push(&PQueueHead, tempPCB, tempPCB->remainingTime);
                     printf("Pushed process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -331,6 +387,8 @@ void SRTN(FILE* outLogFile) {
                 // Not flag process
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB); 
+                // Allocate memory to the new process
+                allocate_mem(tempPCB);
                 // Push process to the queue
                 push(&PQueueHead, tempPCB, tempPCB->remainingTime);
                 printf("Pushed process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -394,6 +452,8 @@ void SRTN(FILE* outLogFile) {
                 succesful_exit_handler = 0;
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB);    
+                // Allocate memory to the new process
+                allocate_mem(tempPCB);
                 // Push both processes into the priority queue
                 push(&PQueueHead, currProcessPCB, currProcessPCB->remainingTime);
                 push(&PQueueHead, tempPCB, tempPCB->remainingTime);
@@ -429,6 +489,7 @@ void SRTN(FILE* outLogFile) {
     return;
 }
 
+// Round Robin Algorithm
 void RR(FILE* outLogFile, int Quantum) {
 
     printf("Running RR\n");
@@ -474,6 +535,8 @@ void RR(FILE* outLogFile, int Quantum) {
                     // If process is not flag
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB);
+                    // Allocate memory to the new process
+                    allocate_mem(tempPCB);
                     // Push process to the queue
                     enqueue(&readyQueue, tempPCB);
                     printf("Enqueued process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -500,6 +563,8 @@ void RR(FILE* outLogFile, int Quantum) {
                 // Not flag process
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB); 
+                // Allocate memory to the new process
+                allocate_mem(tempPCB);
                 // Push process to the queue
                 enqueue(&readyQueue, tempPCB);
                 printf("Enqueued process with id %d\n", tempPCB->id);
@@ -584,6 +649,8 @@ void RR(FILE* outLogFile, int Quantum) {
                 else {
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB); 
+                    // Allocate memory to the new process
+                    allocate_mem(tempPCB);
                     enqueue(&readyQueue, tempPCB);
                     printf("Enqueued process with id %d", tempPCB->id);
                     status = 0;
@@ -596,6 +663,7 @@ void RR(FILE* outLogFile, int Quantum) {
     return;
 }
 
+// Highest Priority Firt Algorithm
 void HPF(FILE* outLogFile) {
 
     printf("Running HPF\n");
@@ -640,8 +708,10 @@ void HPF(FILE* outLogFile) {
                     // If process is not flag
                     temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                     equate(&tempBuffer.data, temp_process_pcb); 
-                    push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
+                    // Allocate memory to the new process
+                    allocate_mem(temp_process_pcb);
                     // Push process to the priority queue
+                    push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                     printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
                 }
             }
@@ -665,6 +735,8 @@ void HPF(FILE* outLogFile) {
                 // Not flag process
                 temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                 equate(&tempBuffer.data, temp_process_pcb); 
+                // Allocate memory to the new process
+                allocate_mem(temp_process_pcb);
                 // Push process to the priority queue
                 push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                 printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
@@ -729,8 +801,10 @@ void HPF(FILE* outLogFile) {
                 // Not flag
                 temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                 equate(&tempBuffer.data, temp_process_pcb); 
-                push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
+                // Allocate memory to the new process
+                allocate_mem(temp_process_pcb);
                 // Push process to the priority queue
+                push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                 printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
                 status = 0;
                 tempBuffer = receiveMsg(0, &status);
