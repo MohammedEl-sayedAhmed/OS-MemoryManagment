@@ -170,7 +170,7 @@ void insert_pos(LinkedList *l, int myPos, int myInfo)
 	(l->sizeOfLL)++;
 }
 
-void delete_begin(LinkedList *l)
+int delete_begin(LinkedList *l)
 {
 	struct node *ptr;
 	if(l->start==NULL)
@@ -181,11 +181,15 @@ void delete_begin(LinkedList *l)
 	else
 	{
 		ptr = l->start;
-		l->start = (l->start)->next ;
-		printf("\nThe deleted element is :%d\n",ptr->info);
+		l->start = (l->start)->next;
+
+		int delInt = ptr->info;
+		printf("\nThe deleted element is :%d\n", delInt);
 		free(ptr);
 
 		(l->sizeOfLL)--;
+
+		return delInt;
 	}
 }
 
