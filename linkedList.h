@@ -1,17 +1,29 @@
 #include<stdlib.h>
 #include <stdio.h>
 //#include <stdbool.h>
-
-     
- 
  
 struct node
 {
 	int info;
 	struct node *next;
 };
-struct node *start=NULL;
 
+typedef struct LinkedList
+{
+    int sizeOfLL;
+    size_t memSize;
+    struct node *start;
+}LinkedList;
+
+//struct node *start=NULL;
+
+void LLInit(LinkedList *l, size_t memSize) {
+	l->sizeOfLL = 0;
+    l->memSize = memSize;
+    l->start = NULL;
+}
+
+/*
 void create(int myInfo)
 {
 
@@ -40,18 +52,19 @@ void create(int myInfo)
 		ptr->next=temp;
 	}
 }
+*/
 
-void display()
+void display(LinkedList *l)
 {
 	struct node *ptr;
-	if(start==NULL)
+	if(l->start==NULL)
 	{
 		printf("\nList is empty");
 		return;
 	}
 	else
 	{
-		ptr=start;
+		ptr = l->start;
 		printf("\nThe List elements are:\t\t");
 		while(ptr!=NULL)
 		{
@@ -62,7 +75,7 @@ void display()
 	printf("\n");
 }
 
-void insert_begin(int myInfo)
+void insert_begin(LinkedList *l, int myInfo)
 {
 	struct node *temp;
 	temp=(struct node *)malloc(sizeof(struct node));
@@ -75,18 +88,20 @@ void insert_begin(int myInfo)
 	temp->info = myInfo;
 	//scanf("%d",&temp->info);
 	temp->next =NULL;
-	if(start==NULL)
+	if(l->start==NULL)
 	{
-		start=temp;
+		l->start=temp;
 	}
 	else
 	{
-		temp->next=start;
-		start=temp;
+		temp->next=l->start;
+		l->start=temp;
 	}
+
+	(l->sizeOfLL)++;
 }
 
-void insert_end(int myInfo)
+void insert_end(LinkedList *l, int myInfo)
 {
 	struct node *temp,*ptr;
 	temp=(struct node *)malloc(sizeof(struct node));
@@ -99,22 +114,24 @@ void insert_end(int myInfo)
 	temp->info = myInfo;
 	//scanf("%d",&temp->info );
 	temp->next =NULL;
-	if(start==NULL)
+	if(l->start==NULL)
 	{
-		start=temp;
+		l->start=temp;
 	}
 	else
 	{
-		ptr=start;
+		ptr = l->start;
 		while(ptr->next !=NULL)
 		{
 			ptr=ptr->next ;
 		}
 		ptr->next =temp;
 	}
+
+	(l->sizeOfLL)++;
 }
 
-void insert_pos(int myPos, int myInfo)
+void insert_pos(LinkedList *l, int myPos, int myInfo)
 {
 	struct node *ptr,*temp;
 	int i,pos;
@@ -134,12 +151,12 @@ void insert_pos(int myPos, int myInfo)
 	temp->next=NULL;
 	if(pos==0)
 	{
-		temp->next=start;
-		start=temp;
+		temp->next=l->start;
+		l->start=temp;
 	}
 	else
 	{
-		for(i=0,ptr=start;i<pos-1;i++) { ptr=ptr->next;
+		for(i=0,ptr=l->start;i<pos-1;i++) { ptr=ptr->next;
 			if(ptr==NULL)
 			{
 				printf("\nPosition not found:[Handle with care]");
@@ -149,43 +166,47 @@ void insert_pos(int myPos, int myInfo)
 		temp->next =ptr->next ;
 		ptr->next=temp;
 	}
+
+	(l->sizeOfLL)++;
 }
 
-void delete_begin()
+void delete_begin(LinkedList *l)
 {
 	struct node *ptr;
-	if(ptr==NULL)
+	if(l->start==NULL)
 	{
-		printf("\nList is Empty");
+		printf("\nList is empty.\n\n");
 		return;
 	}
 	else
 	{
-		ptr=start;
-		start=start->next ;
-		printf("\nThe deleted element is :%d\t",ptr->info);
+		ptr = l->start;
+		l->start = (l->start)->next ;
+		printf("\nThe deleted element is :%d\n",ptr->info);
 		free(ptr);
+
+		(l->sizeOfLL)--;
 	}
 }
 
-void delete_end()
+void delete_end(LinkedList *l)
 {
 	struct node *temp,*ptr;
-	if(start==NULL)
+	if(l->start==NULL)
 	{
 		printf("\nList is Empty");
-		exit(0);
+		return;
 	}
-	else if(start->next ==NULL)
+	else if(l->start->next ==NULL)
 	{
-		ptr=start;
-		start=NULL;
+		ptr=l->start;
+		l->start=NULL;
 		printf("\nThe deleted element is:%d\t",ptr->info);
 		free(ptr);
 	}
 	else
 	{
-		ptr=start;
+		ptr=l->start;
 		while(ptr->next!=NULL)
 		{
 			temp=ptr;
@@ -195,16 +216,18 @@ void delete_end()
 		printf("\nThe deleted element is:%d\t",ptr->info);
 		free(ptr);
 	}
+
+	(l->sizeOfLL)--;
 }
 
-void delete_pos(int myPos)
+void delete_pos(LinkedList *l, int myPos)
 {
 	int i,pos;
 	struct node *temp,*ptr;
-	if(start==NULL)
+	if(l->start==NULL)
 	{
 		printf("\nThe List is Empty");
-		exit(0);
+		return;
 	}
 	else
 	{
@@ -213,14 +236,14 @@ void delete_pos(int myPos)
 		//scanf("%d",&pos);
 		if(pos==0)
 		{
-			ptr=start;
-			start=start->next ;
+			ptr=l->start;
+			l->start=(l->start)->next ;
 			printf("\nThe deleted element is:%d\t",ptr->info  );
 			free(ptr);
 		}
 		else
 		{
-			ptr=start;
+			ptr=l->start;
 			for(i=0;i<pos;i++) { temp=ptr; ptr=ptr->next ;
 				if(ptr==NULL)
 				{
@@ -233,24 +256,26 @@ void delete_pos(int myPos)
 			free(ptr);
 		}
 	}
+
+	(l->sizeOfLL)--;
 }
 
-void SortedInsert(int x){
+void SortedInsert(LinkedList *l, int x){
 
 
-	struct node *p =start;
+	struct node *p =l->start;
 	struct node *t = NULL, *q = NULL;
 	t = (struct node *)malloc(sizeof(struct node));
 	t->info = x;
 	t->next = NULL;
 
-	if (start == NULL){
-		start = t;
+	if (l->start == NULL){
+		l->start = t;
 	}             
-	else if (start->info > x) 
+	else if (l->start->info > x) 
 	{
-		t->next = start;
-		start = t;
+		t->next = l->start;
+		l->start = t;
 	} 
 	else
 	{
@@ -262,4 +287,6 @@ void SortedInsert(int x){
 		t->next = q->next;
 		q->next = t;    
 	}
+
+	(l->sizeOfLL)++;
 }
