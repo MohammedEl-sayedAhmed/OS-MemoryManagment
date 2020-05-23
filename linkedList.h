@@ -1,6 +1,7 @@
 #include<stdlib.h>
 #include <stdio.h>
 //#include <stdbool.h>
+
  
 struct node
 {
@@ -293,4 +294,64 @@ void SortedInsert(LinkedList *l, int x){
 	}
 
 	(l->sizeOfLL)++;
+}
+
+int findPos(LinkedList *l, int value){
+	struct node *p =l->start;
+	
+	//if the linkedlist is empty, return 0
+	if (l->start == NULL){
+		return 0;
+	}
+	else
+	{
+		//loop through the linked list as long as the element is not found
+		while (p && p->info != value){
+			p = p->next;		
+		}	
+
+		//check if the loop exited because the element is found, not because 
+		//p is a null pointer
+		if (p == NULL)
+		{
+			return 0;   //the while loop is exited due to the first condition
+		}
+		else
+		{
+			return 1; //the while loop is exited due to the second condition
+		}	
+	}
+}
+
+int delete_element(LinkedList *l, int value){	
+	//if the linkedlist is empty, return 0
+	if (l->start == NULL){
+		printf("The list is empty, no element to be deleted");
+		return 0;
+	}
+
+	struct node *p = l->start;
+	struct node *q = p->next;
+	
+	//if the element is in the first node
+	if (l->start->info == value)
+	{
+		l->start = p->next;
+		(l->sizeOfLL)--;
+		return 1;
+	}
+
+	//check if the element is in the proceeding nodes
+
+	while(q){
+		if(q->info == value){
+			p->next = q->next;
+			q = NULL;
+			(l->sizeOfLL)--;
+			return 1;
+			}
+		p = q;
+		q = p->next;
+		}
+		return 0;
 }
