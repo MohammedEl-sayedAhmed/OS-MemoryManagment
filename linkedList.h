@@ -176,7 +176,7 @@ int delete_begin(LinkedList *l)
 	if(l->start==NULL)
 	{
 		printf("\nList is empty.\n\n");
-		return;
+		return -1;
 	}
 	else
 	{
