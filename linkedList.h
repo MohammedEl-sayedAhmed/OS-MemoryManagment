@@ -51,7 +51,7 @@ void display()
         struct node *ptr;
         if(start==NULL)
         {
-                printf("\nList is empty:");
+                printf("\nList is empty");
                 return;
         }
         else
@@ -71,7 +71,7 @@ void insert_begin(int myInfo)
         temp=(struct node *)malloc(sizeof(struct node));
         if(temp==NULL)
         {
-                printf("\nOut of Memory Space:");
+                printf("\nOut of Memory Space");
                 return;
         }
         //printf("\nEnter the data value for the node:\t" );
@@ -94,7 +94,7 @@ void insert_end(int myInfo)
         temp=(struct node *)malloc(sizeof(struct node));
         if(temp==NULL)
         {
-                printf("\nOut of Memory Space:");
+                printf("\nOut of Memory Space");
                 return;
         }
         //printf("\nEnter the data value for the node:\t" );
@@ -122,7 +122,7 @@ void insert_pos(int myPos, int myInfo)
         temp=(struct node *)malloc(sizeof(struct node));
         if(temp==NULL)
         {
-                printf("nOut of Memory Space:n");
+                printf("\nOut of Memory Space");
                 return;
         }
         //printf("\nEnter the position for the new node to be inserted:\t");
@@ -156,7 +156,7 @@ void delete_begin()
         struct node *ptr;
         if(ptr==NULL)
         {
-                printf("\nList is Empty:");
+                printf("\nList is Empty");
                 return;
         }
         else
@@ -172,7 +172,7 @@ void delete_end()
         struct node *temp,*ptr;
         if(start==NULL)
         {
-                printf("\nList is Empty:");
+                printf("\nList is Empty");
                 exit(0);
         }
         else if(start->next ==NULL)
@@ -201,7 +201,7 @@ void delete_pos(int myPos)
         struct node *temp,*ptr;
         if(start==NULL)
         {
-                printf("\nThe List is Empty:");
+                printf("\nThe List is Empty");
                 exit(0);
         }
         else
@@ -222,7 +222,7 @@ void delete_pos(int myPos)
                         for(i=0;i<pos;i++) { temp=ptr; ptr=ptr->next ;
                                 if(ptr==NULL)
                                 {
-                                        printf("\nPosition not Found:");
+                                        printf("\nPosition not Found");
                                         return;
                                 }
                         }
