@@ -243,9 +243,15 @@ void SortedInsert(int x){
 	t = (struct node *)malloc(sizeof(struct node));
 	t->info = x;
 	t->next = NULL;
+
 	if (start == NULL){
 		start = t;
 	}             
+	else if (start->info > x) 
+	{
+		t->next = start;
+		start = t;
+	} 
 	else
 	{
 		while (p && p->info < x){
