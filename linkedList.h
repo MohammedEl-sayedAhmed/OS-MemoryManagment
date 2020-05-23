@@ -59,6 +59,7 @@ void display()
 			ptr=ptr->next ;
 		}
 	}
+	printf("\n");
 }
 
 void insert_begin(int myInfo)
