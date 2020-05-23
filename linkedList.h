@@ -59,13 +59,13 @@ void display(LinkedList *l)
 	struct node *ptr;
 	if(l->start==NULL)
 	{
-		printf("\nList is empty");
+		printf("List is empty.\n");
 		return;
 	}
 	else
 	{
 		ptr = l->start;
-		printf("\nThe List elements are:\t\t");
+		printf("List Elements:\t\t");
 		while(ptr!=NULL)
 		{
 			printf("%d\t",ptr->info );
@@ -175,7 +175,7 @@ int delete_begin(LinkedList *l)
 	struct node *ptr;
 	if(l->start==NULL)
 	{
-		printf("\nList is empty.\n\n");
+		printf("List is empty.\n\n");
 		return -1;
 	}
 	else
@@ -184,7 +184,7 @@ int delete_begin(LinkedList *l)
 		l->start = (l->start)->next;
 
 		int delInt = ptr->info;
-		printf("\nThe deleted element is :%d\n", delInt);
+		//printf("\nThe deleted element is :%d\n", delInt);
 		free(ptr);
 
 		(l->sizeOfLL)--;

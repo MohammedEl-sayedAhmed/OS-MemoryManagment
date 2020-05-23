@@ -33,7 +33,8 @@ int main(int argc, char * argv[])
     printf("%d\n", l.sizeOfLL);
 
     for (int i = l.sizeOfLL; i > 0; i--) {
-        delete_begin(&l);
+        int f = delete_begin(&l);
+        printf("%d\n", f);
     }
     display(&l);
 }
