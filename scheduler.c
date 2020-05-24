@@ -41,6 +41,12 @@ LinkedList freeChunks[8];
 void allocate_mem(PCB* processPCB);
 // gets the first available chunk in the memory list with number list_num
 int getFirstFreeChunk(int list_num);
+// Adds the required chunk number to the free chuncks
+int freeChunck(int list_num, int chunk_num);
+// Merge free memory chunks
+int mergeFreeChuncks(int list_num, int freed_chunk_num);
+//printing free chuncks lists
+void DisplayChunkLists();
 
 
 int main(int argc, char * argv[])
@@ -157,6 +163,10 @@ void allocate_mem(PCB* processPCB) {
 
     // update process PCB to store number of allocated memory chunk
     processPCB->alloc_mem_chunk = chunk_num;
+
+    //print for testing
+    printf("\n\nThe process with ID %d is allocated at %d, and its chunck number is %d\n\n", processPCB->id, getClk(), processPCB->alloc_mem_chunk);
+    DisplayChunkLists();
 }
 
 // Gets the first available chunk in the memory list with number list_num
@@ -365,11 +375,19 @@ void stopProcess(PCB* processPCB, FILE* outLogFile, bool silent) {
 void finishProcess(PCB* processPCB, FILE* outLogFile)
 {
     int currTime = getClk();
+    //free memory chunck and merge 
+    int list_num = ceil(log2(processPCB->mem_size)) - 3;
+    int merge = mergeFreeChuncks(list_num,freeChunck(list_num,processPCB->alloc_mem_chunk));
+    
 
     // Calculate and update the process remaining time, finish time and state
     processPCB->remainingTime = 0;
     processPCB->finishTime = processPCB->arrivalTime + processPCB->waitingTime + processPCB->runTime;
     processPCB->state = FINISHED;
+
+    //print for testing
+    printf("\n\nThe process with ID %d is deallocated at %d, and its chunck number is %d\n\n",processPCB->id, processPCB->finishTime, processPCB->alloc_mem_chunk);
+    DisplayChunkLists();
 
     // Calculate turnaround time and the weighted turnaround time
     double turn_around_time = currTime - processPCB->arrivalTime;
@@ -467,7 +485,7 @@ void SRTN(FILE* outLogFile) {
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB); 
                     // Allocate memory to the new process
-                    allocate_mem(tempPCB);
+                    allocate_mem(tempPCB);                    
                     // Push process to the queue
                     push(&PQueueHead, tempPCB, tempPCB->remainingTime);
                     printf("Pushed process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -919,4 +937,16 @@ void HPF(FILE* outLogFile) {
         }
     }
     return;
+}
+
+//printing free chuncks lists
+void DisplayChunkLists() {
+    int chunck = 8;
+    for (int i = 0; i < 8; i++) {
+        printf("List Number %d: and it's chunck is: %d \n", i, chunck);
+        chunck = chunck*2;
+        display(&freeChunks[i]);
+        printf("\n");
+
+    }
 }
