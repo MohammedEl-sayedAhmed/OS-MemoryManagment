@@ -148,6 +148,7 @@ int main(int argc, char * argv[])
     return 0;
 }
 
+// Allocates memory for the given process
 void allocate_mem(PCB* processPCB) {
     // get the number of the list corresponding to the required memory size
     int list_num = ceil(log2(processPCB->mem_size)) - 3;
@@ -184,6 +185,112 @@ int getFirstFreeChunk(int list_num) {
         }
         else {
             return -1;
+        }
+    }
+}
+
+// Adds the required chunk number to the free chuncks
+int freeChunck(int list_num, int chunk_num)
+{
+    //this function checks if the required chunk number is not free, then add it to the free chuncks
+    
+    if (chunk_num == 0)
+    {
+        printf("Invalid chunck num");
+        return 0;
+    }
+
+    if ((list_num < 0) || (list_num > 7)) {
+        printf("Invalid chunk size, No memory is allocated with this chunk.\n");
+        return 0;
+    }
+    else
+    {
+        //check if this chunck is free
+        int found = findPos(&freeChunks[list_num], chunk_num);
+
+        //if it is already free, we cannot deallocate it
+        if(found == 1)
+        {
+            printf("There is no memory allocated in this chunck number");
+            return 0;
+        }
+        //if it is not free, we add it to the free chuncks
+        else
+        {
+            SortedInsert(&freeChunks[list_num],chunk_num);
+            return chunk_num;
+        }   
+    }
+}
+
+// Merge free memory chunks
+int mergeFreeChuncks(int list_num, int freed_chunk_num)
+{
+    if (freed_chunk_num == 0)
+    {
+        printf("\nInvalid chunck num\n");
+        return 0;
+    }
+    if ((list_num < 0) || (list_num > 7)) {
+        printf("\nInvalid chunk size, No memory is allocated with this chunk.\n");
+        return 0;
+    }
+
+    //check if the preceeding or proceeding elements are found (even or odd)
+    int oddChunck = 1;   //0 if even, 1 if odd
+    int found;
+
+    if (freed_chunk_num % 2 == 0)
+    {
+        found = findPos(&freeChunks[list_num],freed_chunk_num-1);
+        oddChunck = 0;
+    }
+    else
+    {
+        found = findPos(&freeChunks[list_num], freed_chunk_num+1);
+        oddChunck = 1;
+    }
+
+    //if element is not found, return as there is no merge 
+    if (found == 0)
+    {
+        printf("\nFound no element suitable for merging\n");
+        return 0;
+    }
+    else
+    {
+        if (oddChunck == 0)  //even chunck 
+        {
+            int del = delete_element(&freeChunks[list_num], freed_chunk_num);
+            int del_prev = delete_element(&freeChunks[list_num], freed_chunk_num-1);
+            if (del == 1 && del_prev == 1) //successful deletion
+            {
+                SortedInsert(&freeChunks[list_num+1], freed_chunk_num/2);
+                return (1+mergeFreeChuncks(list_num+1, freed_chunk_num/2));
+            }
+            else
+            {
+                printf("\nUnable to merge\n");
+                return 0;
+            }  
+        }
+        else   //odd chunck
+        {
+            int del_next = delete_element(&freeChunks[list_num], freed_chunk_num+1);
+            //printf("\nDeleted Element: %d", del_next);
+            int del = delete_element(&freeChunks[list_num], freed_chunk_num);
+            //printf("\nDeleted Element: %d", del);
+            if (del == 1 && del_next == 1) //successful deletion
+            {
+                SortedInsert(&freeChunks[list_num+1], (freed_chunk_num+1)/2);
+                return (1+ mergeFreeChuncks(list_num+1, (freed_chunk_num+1)/2));
+            }
+            else
+            {
+                printf("\nUnable to merge\n");
+                return 0;
+            } 
         }
     }
 }
