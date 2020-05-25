@@ -180,7 +180,7 @@ void allocate_mem(PCB* processPCB,FILE* outMemFile) {
     int startingbyte = chunk_size*(chunk_num-1);
     int endbyte = startingbyte + chunk_size -1;
 
-    fprintf(outMemFile, "At time %d allocated %d byte for process %d from %d to %d\n", currTime1, processPCB->mem_size, processPCB->id, startingbyte, endbyte) ;
+    fprintf(outMemFile, "At time %d allocated %d bytes for process %d from %d to %d\n", currTime1, processPCB->mem_size, processPCB->id, startingbyte, endbyte) ;
 
 }
 
