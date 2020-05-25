@@ -115,7 +115,7 @@ bool sendMsg(PCB pointer_1)
     
     int send_val;
     //comment:Need to make sure from this -(!IPC_NOWAIT) or (IPC_NOWAIT)-
-    send_val = msgsnd(msgqid , &message, sizeof(message), !IPC_NOWAIT);
+    send_val = msgsnd(msgqid , &message, sizeof(PCB), !IPC_NOWAIT);
 
     if(send_val == -1) {
         perror("Errror in send.\n");
@@ -137,11 +137,11 @@ struct msgbuff receiveMsg(int waitFlag, int *status)
 
     // According to the wait flag, receive message irrespective of its type
     if (waitFlag) {
-        rec_val = msgrcv(msgqid, &message, sizeof(message), 0, !IPC_NOWAIT);
+        rec_val = msgrcv(msgqid, &message, sizeof(PCB), 0, !IPC_NOWAIT);
 //        printf("waited   ");
     }
     else {
-        rec_val = msgrcv(msgqid, &message, sizeof(message), 0, IPC_NOWAIT);
+        rec_val = msgrcv(msgqid, &message, sizeof(PCB), 0, IPC_NOWAIT);
     }
 
     if(rec_val == -1) {

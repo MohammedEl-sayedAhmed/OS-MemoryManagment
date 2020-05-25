@@ -34,6 +34,7 @@ void PCBinit(PCB *newlyReadPCB) {
     newlyReadPCB->state = NOTSTARTED;
     newlyReadPCB->alloc_mem_chunk = -1;
 
+
 }
 
 void equate(PCB *from, PCB *to) {
@@ -42,6 +43,7 @@ void equate(PCB *from, PCB *to) {
     to->runTime = from->runTime;
     to->priority = from->priority;
     to->mem_size = from->mem_size;
+
 
     // PCB data
     to->pid = from->pid;
