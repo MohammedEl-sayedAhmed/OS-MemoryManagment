@@ -20,10 +20,10 @@ void userHandler(int signum);
 void startProcess(PCB* processPCB, FILE* outLogFile);
 void resumeProcess(PCB* processPCB, FILE* outLogFile, bool silent);
 void stopProcess(PCB* processPCB, FILE* outLogFile, bool silent);
-void finishProcess(PCB* processPCB, FILE* outLogFile);
-void SRTN(FILE* outLogFile);
-void HPF(FILE* outLogFile);
-void RR(FILE* outLogFile, int Quantum);
+void finishProcess(PCB* processPCB, FILE* outLogFile,FILE* outMemFile);
+void SRTN(FILE* outLogFile, FILE* outMemFile);
+void HPF(FILE* outLogFile, FILE* outMemFile);
+void RR(FILE* outLogFile, FILE* outMemFile, int Quantum);
 int succesful_exit_handler = 0;   // global variable to store that the child exited successfully
 int finish_scheduler = 0;         // global variable to store if the scheduler should stop (No other processes)
 
@@ -38,7 +38,7 @@ void StandardDeviation(FILE* outCalcFile);
 // array of memory chunks linked lists
 LinkedList freeChunks[8];
 // allocates memory for the given process
-void allocate_mem(PCB* processPCB);
+void allocate_mem(PCB* processPCB, FILE* outMemFile);
 // gets the first available chunk in the memory list with number list_num
 int getFirstFreeChunk(int list_num);
 // Adds the required chunk number to the free chuncks
@@ -72,6 +72,13 @@ int main(int argc, char * argv[])
     if (outCalcFile == NULL) {
         printf("Could not open output file for scheduler calculations.\n");
     }
+
+    // Open an output file for the memory log (in the write mode)
+    FILE* outMemFile = (FILE *) malloc(sizeof(FILE));
+    outMemFile = fopen("MemoryLog.txt", "w");
+    if (outMemFile == NULL) {
+        printf("Could not open output file for memory log.\n");
+    } 
 
     // Read the passed arguments 
     int quantum;
@@ -107,15 +114,15 @@ int main(int argc, char * argv[])
     if(strcmp(schedalg,"HPF") == 0)
     {
         printf("Chosen algorithm is HPF.\n");
-        HPF(outLogFile);  
+        HPF(outLogFile,outMemFile);  
     }
     else if (strcmp(schedalg,"RR") == 0) {
         printf("Chosen algorithm is RR with a quantum of %d seconds.\n", quantum);
-        RR(outLogFile, quantum);
+        RR(outLogFile,outMemFile,quantum);
     }
     else if (strcmp(schedalg,"SRTN") == 0) {
         printf("Chosen algorithm is SRTN.\n");
-        SRTN(outLogFile);
+        SRTN(outLogFile,outMemFile);
     }
 
     // Get final value of CPU clocks used by scheduler
@@ -147,6 +154,7 @@ int main(int argc, char * argv[])
     // Close the output log and calculations file
     fclose(outLogFile);
     fclose(outCalcFile);
+    fclose(outMemFile);
     
     // Upon termination, release resources of communication with the clock module
     //destroyClk(false);
@@ -155,7 +163,7 @@ int main(int argc, char * argv[])
 }
 
 // Allocates memory for the given process
-void allocate_mem(PCB* processPCB) {
+void allocate_mem(PCB* processPCB,FILE* outMemFile) {
     // get the number of the list corresponding to the required memory size
     int list_num = ceil(log2(processPCB->mem_size)) - 3;
     int chunk_size = pow(2, (list_num + 3));    
@@ -165,8 +173,15 @@ void allocate_mem(PCB* processPCB) {
     processPCB->alloc_mem_chunk = chunk_num;
 
     //print for testing
-    printf("\n\nThe process with ID %d is allocated at %d, and its chunck number is %d\n\n", processPCB->id, getClk(), processPCB->alloc_mem_chunk);
+    //printf("\n\nThe process with ID %d is allocated at %d, and its chunck number is %d\n\n", processPCB->id, getClk(), processPCB->alloc_mem_chunk);
     //DisplayChunkLists();
+
+    int currTime1 = getClk();
+    int startingbyte = chunk_size*(chunk_num-1);
+    int endbyte = startingbyte + chunk_size -1;
+
+    fprintf(outMemFile, "At time %d allocated %d byte for process %d from %d to %d\n", currTime1, processPCB->mem_size, processPCB->id, startingbyte, endbyte) ;
+
 }
 
 // Gets the first available chunk in the memory list with number list_num
@@ -372,12 +387,14 @@ void stopProcess(PCB* processPCB, FILE* outLogFile, bool silent) {
 }
 
 // Updates the process data as appropriate upon termination
-void finishProcess(PCB* processPCB, FILE* outLogFile)
+void finishProcess(PCB* processPCB, FILE* outLogFile,FILE* outMemFile)
 {
     int currTime = getClk();
     //free memory chunck and merge 
     int list_num = ceil(log2(processPCB->mem_size)) - 3;
+    int chunk_size = pow(2, (list_num + 3));    
     int merge = mergeFreeChuncks(list_num,freeChunck(list_num,processPCB->alloc_mem_chunk));
+
     
     
     // Calculate and update the process remaining time, finish time and state
@@ -386,9 +403,9 @@ void finishProcess(PCB* processPCB, FILE* outLogFile)
     processPCB->state = FINISHED;
 
     //print for testing
-    printf("\n\nThe process with ID %d is deallocated at %d, and its chunck number is %d\n\n",processPCB->id, processPCB->finishTime, processPCB->alloc_mem_chunk);
-    DisplayChunkLists();
-    
+    //printf("\n\nThe process with ID %d is deallocated at %d, and its chunck number is %d\n\n",processPCB->id, processPCB->finishTime, processPCB->alloc_mem_chunk);
+    //DisplayChunkLists();
+
     // Calculate turnaround time and the weighted turnaround time
     double turn_around_time = currTime - processPCB->arrivalTime;
     double w_turn_around_time = turn_around_time/((double)(processPCB->runTime));
@@ -404,9 +421,19 @@ void finishProcess(PCB* processPCB, FILE* outLogFile)
 
     // Print the "finished" line in the output log file
     fprintf(outLogFile, "At time %d process %d finished arr %d total %d remain %d wait %d TA %.0f WTA %.2f\n", currTime, processPCB->id, processPCB->arrivalTime, processPCB->runTime, processPCB->remainingTime, processPCB->waitingTime, turn_around_time, w_turn_around_time);
+   ////////////// 
+
+    int startingbyte = chunk_size*(processPCB->alloc_mem_chunk-1);
+    int endbyte = startingbyte + chunk_size -1;
+
+    fprintf(outMemFile, "At time %d freed %d bytes from process %d from %d to %d\n", currTime, processPCB->mem_size, processPCB->id, startingbyte, endbyte) ;
+
+/////////////////////
     free(processPCB);
     processPCB = NULL;
     succesful_exit_handler = 0;
+
+    
 }
 
 // Handler for the SIGUSR1 signal sent to scheduler upon successful termination of a process
@@ -439,7 +466,7 @@ void StandardDeviation(FILE* outCalcFile)
 }
 
 // Shortest Remaining Time Next Algorithm
-void SRTN(FILE* outLogFile) {
+void SRTN(FILE* outLogFile,FILE* outMemFile) {
 
     printf("Running SRTN.\n");
 
@@ -485,7 +512,7 @@ void SRTN(FILE* outLogFile) {
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB); 
                     // Allocate memory to the new process
-                    allocate_mem(tempPCB);                    
+                    allocate_mem(tempPCB,outMemFile);                    
                     // Push process to the queue
                     push(&PQueueHead, tempPCB, tempPCB->remainingTime);
                     printf("Pushed process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -513,7 +540,7 @@ void SRTN(FILE* outLogFile) {
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB); 
                 // Allocate memory to the new process
-                allocate_mem(tempPCB);                    
+                allocate_mem(tempPCB,outMemFile);                    
                 // Push process to the queue
                 push(&PQueueHead, tempPCB, tempPCB->remainingTime);
                 printf("Pushed process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -565,7 +592,7 @@ void SRTN(FILE* outLogFile) {
         if (succesful_exit_handler) {
 
             printf("Will finish process with id %d\n", currProcessPCB->id);
-            finishProcess(currProcessPCB, outLogFile);
+            finishProcess(currProcessPCB, outLogFile,outMemFile);
         }
         if (status == 1) {
 
@@ -578,7 +605,7 @@ void SRTN(FILE* outLogFile) {
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB);   
                 // Allocate memory to the new process
-                allocate_mem(tempPCB);                     
+                allocate_mem(tempPCB,outMemFile);                     
                 // Push both processes into the priority queue
                 push(&PQueueHead, currProcessPCB, currProcessPCB->remainingTime);
                 push(&PQueueHead, tempPCB, tempPCB->remainingTime);
@@ -603,7 +630,7 @@ void SRTN(FILE* outLogFile) {
                 ///////printf("Exit status from process %d.\n", WIFEXITED(stat));
                 ///////printf("After sleep\n");
 
-                finishProcess(currProcessPCB, outLogFile);
+                finishProcess(currProcessPCB, outLogFile,outMemFile);
                 printf("Finished process with id %d\n", currProcessPCB->id);
 
                 // Set termination flag
@@ -614,7 +641,7 @@ void SRTN(FILE* outLogFile) {
     return;
 }
 
-void RR(FILE* outLogFile, int Quantum) {
+void RR(FILE* outLogFile,FILE* outMemFile, int Quantum) {
 
     printf("Running RR\n");
 
@@ -660,7 +687,7 @@ void RR(FILE* outLogFile, int Quantum) {
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB);
                     // Allocate memory to the new process
-                    allocate_mem(tempPCB);                    
+                    allocate_mem(tempPCB,outMemFile);                    
                     // Push process to the queue
                     enqueue(&readyQueue, tempPCB);
                     printf("Enqueued process with id %d and pid %d\n", tempPCB->id, tempPCB->pid);
@@ -688,7 +715,7 @@ void RR(FILE* outLogFile, int Quantum) {
                 tempPCB = (PCB *) malloc(sizeof(PCB));  
                 equate(&tempBuffer.data, tempPCB); 
                 // Allocate memory to the new process
-                allocate_mem(tempPCB);                    
+                allocate_mem(tempPCB,outMemFile);                    
                 // Push process to the queue
                 enqueue(&readyQueue, tempPCB);
                 printf("Enqueued process with id %d\n", tempPCB->id);
@@ -747,7 +774,7 @@ void RR(FILE* outLogFile, int Quantum) {
                 ///////printf("After sleep\n");
             }
 
-            finishProcess(currProcessPCB, outLogFile);
+            finishProcess(currProcessPCB, outLogFile,outMemFile);
         }
         else {
 
@@ -774,7 +801,7 @@ void RR(FILE* outLogFile, int Quantum) {
                     tempPCB = (PCB *) malloc(sizeof(PCB));  
                     equate(&tempBuffer.data, tempPCB); 
                     // Allocate memory to the new process
-                    allocate_mem(tempPCB);                    
+                    allocate_mem(tempPCB,outMemFile);                    
                     enqueue(&readyQueue, tempPCB);
                     printf("Enqueued process with id %d", tempPCB->id);
                     status = 0;
@@ -787,7 +814,7 @@ void RR(FILE* outLogFile, int Quantum) {
     return;
 }
 
-void HPF(FILE* outLogFile) {
+void HPF(FILE* outLogFile, FILE* outMemFile) {
 
     printf("Running HPF\n");
 
@@ -832,7 +859,7 @@ void HPF(FILE* outLogFile) {
                     temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                     equate(&tempBuffer.data, temp_process_pcb); 
                     // Allocate memory to the new process
-                    allocate_mem(temp_process_pcb);                    
+                    allocate_mem(temp_process_pcb,outMemFile);                    
                     push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                     // Push process to the priority queue
                     printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
@@ -859,7 +886,7 @@ void HPF(FILE* outLogFile) {
                 temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                 equate(&tempBuffer.data, temp_process_pcb); 
                 // Allocate memory to the new process
-                allocate_mem(temp_process_pcb); 
+                allocate_mem(temp_process_pcb,outMemFile); 
                 // Push process to the priority queue
                 push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                 printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
@@ -906,7 +933,7 @@ void HPF(FILE* outLogFile) {
             ///////printf("Exit status from process %d.\n", WIFEXITED(stat));
             ///////printf("After sleep\n");
         }
-        finishProcess(currProcessPCB, outLogFile);
+        finishProcess(currProcessPCB, outLogFile,outMemFile);
         
 
         status = 0;
@@ -925,7 +952,7 @@ void HPF(FILE* outLogFile) {
                 temp_process_pcb = (PCB *) malloc(sizeof(PCB)); 
                 equate(&tempBuffer.data, temp_process_pcb); 
                 // Allocate memory to the new process
-                allocate_mem(temp_process_pcb); 
+                allocate_mem(temp_process_pcb,outMemFile); 
                 push(&ReadyQueue, temp_process_pcb, temp_process_pcb->priority);
                 // Push process to the priority queue
                 printf("Pushed process with id %d and pid %d\n", temp_process_pcb->id, temp_process_pcb->pid);
